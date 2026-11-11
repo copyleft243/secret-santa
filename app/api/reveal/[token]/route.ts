@@ -8,15 +8,17 @@ import {
   normalizeIdList,
   setExclusions,
 } from "@/lib/db";
+import { getLocale, messages } from "@/lib/messages";
 import type { RevealState } from "@/lib/types";
 
 type Ctx = { params: Promise<{ token: string }> };
 
-export async function GET(_request: NextRequest, { params }: Ctx): Promise<Response> {
+export async function GET(request: NextRequest, { params }: Ctx): Promise<Response> {
   const { token } = await params;
+  const t = messages[getLocale(request)];
   const participant = getParticipantByToken(token);
   if (!participant) {
-    return Response.json({ error: "Ce lien n'est pas valide." }, { status: 404 });
+    return Response.json({ error: t.errors.invalidLink }, { status: 404 });
   }
 
   const drawn = isDrawn();
@@ -32,22 +34,20 @@ export async function GET(_request: NextRequest, { params }: Ctx): Promise<Respo
 
 export async function PATCH(request: NextRequest, { params }: Ctx): Promise<Response> {
   const { token } = await params;
+  const t = messages[getLocale(request)];
   const participant = getParticipantByToken(token);
   if (!participant) {
-    return Response.json({ error: "Ce lien n'est pas valide." }, { status: 404 });
+    return Response.json({ error: t.errors.invalidLink }, { status: 404 });
   }
   if (isDrawn()) {
-    return Response.json(
-      { error: "Le tirage au sort a déjà eu lieu : les exclusions ne peuvent plus être modifiées." },
-      { status: 409 }
-    );
+    return Response.json({ error: t.errors.drawAlreadyHappened }, { status: 409 });
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Requête invalide." }, { status: 400 });
+    return Response.json({ error: t.errors.invalidBody }, { status: 400 });
   }
 
   const excludedIds = normalizeIdList((body as { excludedIds?: unknown }).excludedIds);

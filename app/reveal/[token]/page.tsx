@@ -2,11 +2,14 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useI18n } from "@/components/LocaleProvider";
+import { format } from "@/lib/messages";
 import type { RevealState } from "@/lib/types";
 
 export default function RevealPage() {
   const params = useParams();
   const token = (params?.token as string | undefined) ?? "";
+  const { msg, locale } = useI18n();
 
   const [state, setState] = useState<RevealState | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -27,8 +30,8 @@ export default function RevealPage() {
         setState(data);
         setExcluded(new Set(data.excludedIds));
       })
-      .catch(() => setError("Impossible de charger votre page. Veuillez rafraîchir."));
-  }, [token]);
+      .catch(() => setError(msg.reveal.loadError));
+  }, [token, msg]);
 
   const toggle = (id: number) => {
     setExcluded((prev) => {
@@ -46,18 +49,18 @@ export default function RevealPage() {
     try {
       const res = await fetch(`/api/reveal/${token}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-locale": locale },
         body: JSON.stringify({ excludedIds: [...excluded] }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Impossible d'enregistrer.");
+        setError(data.error ?? msg.reveal.saveError);
         return;
       }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
-      setError("Erreur réseau. Veuillez réessayer.");
+      setError(msg.reveal.networkError);
     } finally {
       setSaving(false);
     }
@@ -72,20 +75,16 @@ export default function RevealPage() {
 
       {notFound ? (
         <section className="rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm">
-          <h2 className="text-lg font-semibold text-stone-900">Ce lien n&apos;est pas valide</h2>
-          <p className="mt-2 text-sm text-stone-600">
-            Vérifiez l&apos;adresse qui vous a été fournie, ou contactez l&apos;organisateur.
-          </p>
+          <h2 className="text-lg font-semibold text-stone-900">{msg.reveal.invalidTitle}</h2>
+          <p className="mt-2 text-sm text-stone-600">{msg.reveal.invalidText}</p>
         </section>
       ) : !state ? (
-        <p className="text-center text-stone-500">Chargement…</p>
+        <p className="text-center text-stone-500">{msg.reveal.loading}</p>
       ) : state.drawn ? (
         <section className="rounded-2xl border border-emerald-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-stone-500">Bonjour {state.name},</p>
+          <p className="text-sm text-stone-500">{format(msg.reveal.greeting, { name: state.name })}</p>
           <p className="mt-3 text-xl font-semibold text-stone-900">
-            {state.matchName
-              ? "Vous allez offrir un cadeau à…"
-              : "Un problème est survenu — contactez l&apos;organisateur."}
+            {state.matchName ? msg.reveal.matchIntro : msg.reveal.matchProblem}
           </p>
           {state.matchName && (
             <div className="mt-6 rounded-xl bg-emerald-50 px-6 py-8">
@@ -94,23 +93,20 @@ export default function RevealPage() {
               </span>
             </div>
           )}
-          <p className="mt-6 text-sm text-stone-500">🤫 Ne le dites à personne !</p>
+          <p className="mt-6 text-sm text-stone-500">{msg.reveal.secret}</p>
         </section>
       ) : (
         <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-stone-900">
-            Bonjour {state.name} — votre inscription est bien enregistrée 🎉
+            {format(msg.reveal.notDrawnTitle, { name: state.name })}
           </h2>
-          <p className="mt-2 text-sm text-stone-600">
-            Gardez ce lien précieusement. Une fois le tirage effectué par l&apos;organisateur,
-            revenez ici pour découvrir à qui vous offrirez un cadeau.
-          </p>
+          <p className="mt-2 text-sm text-stone-600">{msg.reveal.notDrawnText}</p>
 
           {state.participants.length > 0 && (
             <fieldset className="mt-6">
               <legend className="text-sm font-medium text-stone-800">
-                À qui préférez-vous ne <em>pas</em> offrir de cadeau ?{" "}
-                <span className="text-stone-400">(facultatif)</span>
+                {msg.reveal.exclusionsLegend}{" "}
+                <span className="text-stone-400">{msg.reveal.optional}</span>
               </legend>
               <div className="mt-3 max-h-56 space-y-1 overflow-y-auto rounded-lg border border-stone-200 p-2">
                 {state.participants.map((p) => (
@@ -140,7 +136,7 @@ export default function RevealPage() {
               disabled={saving}
               className="mt-6 w-full rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-700 disabled:opacity-50"
             >
-              {saving ? "Enregistrement…" : saved ? "Enregistré ✓" : "Enregistrer mes préférences"}
+              {saving ? msg.reveal.saving : saved ? msg.reveal.saved : msg.reveal.save}
             </button>
           )}
         </section>
