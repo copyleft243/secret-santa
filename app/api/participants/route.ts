@@ -6,24 +6,24 @@ export async function POST(request: NextRequest): Promise<Response> {
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Invalid request body." }, { status: 400 });
+    return Response.json({ error: "Requête invalide." }, { status: 400 });
   }
 
   const raw = body as { name?: unknown; excludedIds?: unknown };
   const name = typeof raw.name === "string" ? raw.name.trim() : "";
 
   if (!name) {
-    return Response.json({ error: "Please enter your name." }, { status: 400 });
+    return Response.json({ error: "Veuillez saisir votre nom." }, { status: 400 });
   }
   if (name.length > 80) {
-    return Response.json({ error: "That name is too long (max 80 characters)." }, { status: 400 });
+    return Response.json({ error: "Ce nom est trop long (80 caractères maximum)." }, { status: 400 });
   }
 
   const excludedIds = normalizeIdList(raw.excludedIds);
 
   if (isDrawn()) {
     return Response.json(
-      { error: "Registration is closed — the draw has already happened." },
+      { error: "Les inscriptions sont closes — le tirage au sort a déjà eu lieu." },
       { status: 409 }
     );
   }
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   } catch (err) {
     if (err instanceof DuplicateNameError) {
       return Response.json(
-        { error: "Someone with this name is already registered (names are case-insensitive)." },
+        { error: "Une personne portant ce nom est déjà inscrite (sans distinction de casse)." },
         { status: 409 }
       );
     }

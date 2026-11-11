@@ -13,7 +13,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const headers = useCallback(
     () => ({ "x-admin-secret": secret }),
@@ -33,7 +33,7 @@ export default function AdminPage() {
         setAuthed(true);
         setError(null);
       } catch {
-        setError("Network error.");
+        setError("Erreur réseau.");
       }
     },
     []
@@ -55,7 +55,7 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/state", { headers: { "x-admin-secret": secret } });
       if (res.status === 401) {
         setAuthed(false);
-        setError("Incorrect admin secret.");
+        setError("Mot de passe administrateur incorrect.");
         return;
       }
       const data: AdminState = await res.json();
@@ -63,7 +63,7 @@ export default function AdminPage() {
       setState(data);
       setAuthed(true);
     } catch {
-      setError("Network error.");
+      setError("Erreur réseau.");
     } finally {
       setBusy(false);
     }
@@ -83,12 +83,12 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/assign", { method: "POST", headers: headers() });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not run the draw.");
+        setError(data.error ?? "Impossible de lancer le tirage.");
         return;
       }
       setState(data);
     } catch {
-      setError("Network error.");
+      setError("Erreur réseau.");
     } finally {
       setBusy(false);
     }
@@ -102,19 +102,19 @@ export default function AdminPage() {
       const res = await fetch("/api/admin/reset", { method: "POST", headers: headers() });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not reset.");
+        setError(data.error ?? "Impossible de réinitialiser.");
         return;
       }
       setState(data);
     } catch {
-      setError("Network error.");
+      setError("Erreur réseau.");
     } finally {
       setBusy(false);
     }
   };
 
   const removeParticipant = async (id: number) => {
-    if (!window.confirm("Remove this participant? This cannot be undone.")) return;
+    if (!window.confirm("Retirer cette personne ? Cette action est irréversible.")) return;
     setBusy(true);
     setError(null);
     try {
@@ -124,31 +124,27 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not remove.");
+        setError(data.error ?? "Impossible de retirer cette personne.");
         return;
       }
       setState(data);
     } catch {
-      setError("Network error.");
+      setError("Erreur réseau.");
     } finally {
       setBusy(false);
     }
   };
 
-  const copy = async (text: string, key: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(key);
-      setTimeout(() => setCopied(null), 1500);
-    } catch {
-      /* clipboard unavailable */
-    }
-  };
-
-  const copyAll = () => {
+  const copyAll = async () => {
     if (!state) return;
     const text = state.assignments.map((a) => `${a.giverName} → ${a.receiverName}`).join("\n");
-    void copy(text, "all");
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* presse-papiers indisponible */
+    }
   };
 
   if (!authed) {
@@ -156,15 +152,17 @@ export default function AdminPage() {
       <main className="mx-auto w-full max-w-sm px-4 py-20">
         <header className="mb-6 text-center">
           <div className="text-4xl">🔐</div>
-          <h1 className="mt-2 text-2xl font-semibold text-stone-900">Admin</h1>
-          <p className="mt-1 text-sm text-stone-500">Enter the admin secret to continue.</p>
+          <h1 className="mt-2 text-2xl font-semibold text-stone-900">Administration</h1>
+          <p className="mt-1 text-sm text-stone-500">
+            Saisissez le mot de passe administrateur pour continuer.
+          </p>
         </header>
         <form onSubmit={login} className="space-y-3">
           <input
             type="password"
             value={secret}
             onChange={(e) => setSecret(e.target.value)}
-            placeholder="Admin secret"
+            placeholder="Mot de passe administrateur"
             className="w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
           />
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -173,7 +171,7 @@ export default function AdminPage() {
             disabled={busy || !secret}
             className="w-full rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-stone-700 disabled:opacity-50"
           >
-            {busy ? "Checking…" : "Sign in"}
+            {busy ? "Vérification…" : "Se connecter"}
           </button>
         </form>
       </main>
@@ -187,17 +185,17 @@ export default function AdminPage() {
     <main className="mx-auto w-full max-w-2xl px-4 py-10">
       <header className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-stone-900">Admin</h1>
+          <h1 className="text-2xl font-semibold text-stone-900">Administration</h1>
           <p className="text-sm text-stone-500">
             {participantCount} participant{participantCount === 1 ? "" : "s"}
-            {state?.drawn ? " · draw complete" : " · not drawn yet"}
+            {state?.drawn ? " · tirage effectué" : " · pas encore tiré"}
           </p>
         </div>
         <button
           onClick={logout}
           className="rounded-lg border border-stone-300 px-3 py-1.5 text-sm text-stone-600 hover:bg-stone-100"
         >
-          Sign out
+          Se déconnecter
         </button>
       </header>
 
@@ -211,9 +209,10 @@ export default function AdminPage() {
         <section className="mb-6 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-stone-900">Run the draw</h2>
+              <h2 className="font-semibold text-stone-900">Lancer le tirage au sort</h2>
               <p className="text-sm text-stone-500">
-                Randomly assign everyone a giftee. Nobody gets themselves (or anyone they excluded).
+                Assigne aléatoirement un destinataire à chaque personne. Personne ne s&apos;offre à
+                soi-même (ni à une personne exclue).
               </p>
             </div>
             <button
@@ -221,12 +220,13 @@ export default function AdminPage() {
               disabled={busy || !canDraw}
               className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {busy ? "Drawing…" : "Run draw"}
+              {busy ? "Tirage…" : "Lancer le tirage"}
             </button>
           </div>
           {participantCount < 2 && (
             <p className="mt-2 text-sm text-amber-600">
-              Need at least two participants to draw. Share the site so people can register!
+              Il faut au moins deux participants pour lancer le tirage. Partagez le site pour que les
+              gens s&apos;inscrivent !
             </p>
           )}
         </section>
@@ -236,9 +236,9 @@ export default function AdminPage() {
         <section className="mb-6 rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-stone-900">The draw is complete 🎉</h2>
+              <h2 className="font-semibold text-stone-900">Le tirage est terminé 🎉</h2>
               <p className="text-sm text-stone-500">
-                {state.assignments.length} match{state.assignments.length === 1 ? "" : "es"}.
+                {state.assignments.length} attribution{state.assignments.length === 1 ? "" : "s"}.
               </p>
             </div>
             <div className="flex gap-2">
@@ -246,7 +246,7 @@ export default function AdminPage() {
                 onClick={copyAll}
                 className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-700 hover:bg-stone-100"
               >
-                {copied === "all" ? "Copied!" : "Copy results"}
+                {copied ? "Copié !" : "Copier les résultats"}
               </button>
               {confirmReset ? (
                 <button
@@ -254,14 +254,14 @@ export default function AdminPage() {
                   disabled={busy}
                   className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-500"
                 >
-                  Confirm reset
+                  Confirmer
                 </button>
               ) : (
                 <button
                   onClick={() => setConfirmReset(true)}
                   className="rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
                 >
-                  Reset &amp; redraw
+                  Réinitialiser le tirage
                 </button>
               )}
             </div>
@@ -282,11 +282,10 @@ export default function AdminPage() {
       <section className="rounded-2xl border border-stone-200 bg-white shadow-sm">
         <div className="border-b border-stone-100 px-5 py-4">
           <h2 className="font-semibold text-stone-900">Participants</h2>
-          <p className="text-sm text-stone-500">Their personal links are listed so you can resend them.</p>
         </div>
 
         {state && state.participants.length === 0 ? (
-          <p className="px-5 py-6 text-sm text-stone-500">No one has registered yet.</p>
+          <p className="px-5 py-6 text-sm text-stone-500">Aucune inscription pour le moment.</p>
         ) : (
           <ul className="divide-y divide-stone-100">
             {state?.participants.map((p) => (
@@ -302,27 +301,19 @@ export default function AdminPage() {
                   </div>
                   {p.exclusions.length > 0 && (
                     <p className="truncate text-xs text-stone-500">
-                      won&apos;t give to: {p.exclusions.map((e) => e.name).join(", ")}
+                      ne fera pas de cadeau à : {p.exclusions.map((e) => e.name).join(", ")}
                     </p>
                   )}
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                {!state?.drawn && (
                   <button
-                    onClick={() => copy(`${window.location.origin}/reveal/${p.token}`, `link-${p.id}`)}
-                    className="rounded-md border border-stone-200 px-2 py-1 text-xs text-stone-600 hover:bg-stone-50"
+                    onClick={() => removeParticipant(p.id)}
+                    disabled={busy}
+                    className="shrink-0 rounded-md border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
                   >
-                    {copied === `link-${p.id}` ? "Copied" : "Copy link"}
+                    Retirer
                   </button>
-                  {!state?.drawn && (
-                    <button
-                      onClick={() => removeParticipant(p.id)}
-                      disabled={busy}
-                      className="rounded-md border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-50"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
+                )}
               </li>
             ))}
           </ul>

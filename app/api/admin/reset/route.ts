@@ -4,7 +4,7 @@ import { clearAssignments, getAdminState } from "@/lib/db";
 
 export async function POST(request: NextRequest): Promise<Response> {
   if (!isAdminAuthorized(request)) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
+    return Response.json({ error: "Non autorisé." }, { status: 401 });
   }
   clearAssignments();
   return Response.json(getAdminState());

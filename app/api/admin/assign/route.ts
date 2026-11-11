@@ -5,11 +5,11 @@ import { assignSecretSanta } from "@/lib/assignment";
 
 export async function POST(request: NextRequest): Promise<Response> {
   if (!isAdminAuthorized(request)) {
-    return Response.json({ error: "Unauthorized." }, { status: 401 });
+    return Response.json({ error: "Non autorisé." }, { status: 401 });
   }
   if (isDrawn()) {
     return Response.json(
-      { error: "The draw has already been run. Reset it first to draw again." },
+      { error: "Le tirage a déjà été effectué. Réinitialisez-le avant de relancer." },
       { status: 409 }
     );
   }
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   const people = getAssignablePeople();
   if (people.length < 2) {
     return Response.json(
-      { error: "You need at least two participants to run the draw." },
+      { error: "Il faut au moins deux participants pour lancer le tirage." },
       { status: 422 }
     );
   }
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   const pairs = assignSecretSanta(people);
   if (!pairs) {
     return Response.json(
-      { error: "No valid assignment is possible with the current exclusions." },
+      { error: "Aucune assignation valide n'est possible avec les exclusions actuelles." },
       { status: 422 }
     );
   }

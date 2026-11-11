@@ -24,7 +24,6 @@ export interface RevealState {
 export interface AdminParticipant {
   id: number;
   name: string;
-  token: string;
   exclusions: ParticipantInfo[];
   matchName: string | null;
 }

@@ -16,7 +16,7 @@ export async function GET(_request: NextRequest, { params }: Ctx): Promise<Respo
   const { token } = await params;
   const participant = getParticipantByToken(token);
   if (!participant) {
-    return Response.json({ error: "This link is not valid." }, { status: 404 });
+    return Response.json({ error: "Ce lien n'est pas valide." }, { status: 404 });
   }
 
   const drawn = isDrawn();
@@ -34,11 +34,11 @@ export async function PATCH(request: NextRequest, { params }: Ctx): Promise<Resp
   const { token } = await params;
   const participant = getParticipantByToken(token);
   if (!participant) {
-    return Response.json({ error: "This link is not valid." }, { status: 404 });
+    return Response.json({ error: "Ce lien n'est pas valide." }, { status: 404 });
   }
   if (isDrawn()) {
     return Response.json(
-      { error: "The draw has already happened, so exclusions can no longer be changed." },
+      { error: "Le tirage au sort a déjà eu lieu : les exclusions ne peuvent plus être modifiées." },
       { status: 409 }
     );
   }
@@ -47,7 +47,7 @@ export async function PATCH(request: NextRequest, { params }: Ctx): Promise<Resp
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Invalid request body." }, { status: 400 });
+    return Response.json({ error: "Requête invalide." }, { status: 400 });
   }
 
   const excludedIds = normalizeIdList((body as { excludedIds?: unknown }).excludedIds);

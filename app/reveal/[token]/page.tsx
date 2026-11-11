@@ -27,7 +27,7 @@ export default function RevealPage() {
         setState(data);
         setExcluded(new Set(data.excludedIds));
       })
-      .catch(() => setError("Could not load your page. Please refresh."));
+      .catch(() => setError("Impossible de charger votre page. Veuillez rafraîchir."));
   }, [token]);
 
   const toggle = (id: number) => {
@@ -51,13 +51,13 @@ export default function RevealPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Could not save.");
+        setError(data.error ?? "Impossible d'enregistrer.");
         return;
       }
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch {
-      setError("Network error. Please try again.");
+      setError("Erreur réseau. Veuillez réessayer.");
     } finally {
       setSaving(false);
     }
@@ -72,18 +72,20 @@ export default function RevealPage() {
 
       {notFound ? (
         <section className="rounded-2xl border border-stone-200 bg-white p-6 text-center shadow-sm">
-          <h2 className="text-lg font-semibold text-stone-900">This link isn&apos;t valid</h2>
+          <h2 className="text-lg font-semibold text-stone-900">Ce lien n&apos;est pas valide</h2>
           <p className="mt-2 text-sm text-stone-600">
-            Double-check the address you were given, or contact the organizer.
+            Vérifiez l&apos;adresse qui vous a été fournie, ou contactez l&apos;organisateur.
           </p>
         </section>
       ) : !state ? (
-        <p className="text-center text-stone-500">Loading…</p>
+        <p className="text-center text-stone-500">Chargement…</p>
       ) : state.drawn ? (
         <section className="rounded-2xl border border-emerald-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm text-stone-500">Hi {state.name},</p>
+          <p className="text-sm text-stone-500">Bonjour {state.name},</p>
           <p className="mt-3 text-xl font-semibold text-stone-900">
-            {state.matchName ? "You&apos;re giving a gift to…" : "Something went wrong — ask the organizer."}
+            {state.matchName
+              ? "Vous allez offrir un cadeau à…"
+              : "Un problème est survenu — contactez l&apos;organisateur."}
           </p>
           {state.matchName && (
             <div className="mt-6 rounded-xl bg-emerald-50 px-6 py-8">
@@ -92,20 +94,23 @@ export default function RevealPage() {
               </span>
             </div>
           )}
-          <p className="mt-6 text-sm text-stone-500">🤫 Don&apos;t tell anyone!</p>
+          <p className="mt-6 text-sm text-stone-500">🤫 Ne le dites à personne !</p>
         </section>
       ) : (
         <section className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-stone-900">Hi {state.name} — you&apos;re registered 🎉</h2>
+          <h2 className="text-lg font-semibold text-stone-900">
+            Bonjour {state.name} — votre inscription est bien enregistrée 🎉
+          </h2>
           <p className="mt-2 text-sm text-stone-600">
-            Keep this link safe. Once the organizer runs the draw, come back here to see who
-            you&apos;re giving to.
+            Gardez ce lien précieusement. Une fois le tirage effectué par l&apos;organisateur,
+            revenez ici pour découvrir à qui vous offrirez un cadeau.
           </p>
 
           {state.participants.length > 0 && (
             <fieldset className="mt-6">
               <legend className="text-sm font-medium text-stone-800">
-                Anyone you&apos;d rather <em>not</em> give to? <span className="text-stone-400">(optional)</span>
+                À qui préférez-vous ne <em>pas</em> offrir de cadeau ?{" "}
+                <span className="text-stone-400">(facultatif)</span>
               </legend>
               <div className="mt-3 max-h-56 space-y-1 overflow-y-auto rounded-lg border border-stone-200 p-2">
                 {state.participants.map((p) => (
@@ -135,7 +140,7 @@ export default function RevealPage() {
               disabled={saving}
               className="mt-6 w-full rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-stone-700 disabled:opacity-50"
             >
-              {saving ? "Saving…" : saved ? "Saved ✓" : "Save preferences"}
+              {saving ? "Enregistrement…" : saved ? "Enregistré ✓" : "Enregistrer mes préférences"}
             </button>
           )}
         </section>

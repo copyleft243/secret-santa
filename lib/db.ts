@@ -242,8 +242,8 @@ export function deleteParticipant(id: number): void {
 export function getAdminState(): AdminState {
   const db = getDb();
   const participants = db
-    .prepare("SELECT id, name, token FROM participant ORDER BY id")
-    .all() as unknown as ParticipantRow[];
+    .prepare("SELECT id, name FROM participant ORDER BY id")
+    .all() as unknown as { id: number; name: string }[];
 
   const assignments = db
     .prepare(
@@ -264,7 +264,6 @@ export function getAdminState(): AdminState {
     participants: participants.map((p) => ({
       id: p.id,
       name: p.name,
-      token: p.token,
       exclusions: getExclusionsDetailed(p.id),
       matchName: matchById.get(p.id) ?? null,
     })),
